@@ -6,6 +6,8 @@ import { HeroButton } from '@/components/ui/hero-button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { FaceScanDialog } from '@/components/face/FaceScanDialog';
+import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { 
   Users, 
   CheckSquare, 
@@ -25,6 +27,8 @@ interface Student {
   class: string;
   section?: string;
   photo_url?: string;
+  face_descriptor?: number[];
+  face_enrolled_at?: string;
 }
 
 interface AttendanceRecord {
@@ -40,6 +44,8 @@ export const TeacherDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [todayAttendanceExists, setTodayAttendanceExists] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [faceScanOpen, setFaceScanOpen] = useState(false);
+  const [addStudentOpen, setAddStudentOpen] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -56,7 +62,10 @@ export const TeacherDashboard = () => {
 
       if (error) throw error;
       
-      setStudents(data || []);
+      setStudents((data || []).map(student => ({
+        ...student,
+        face_descriptor: student.face_descriptor as number[] | undefined
+      })));
       // Initialize attendance with all students present by default
       setAttendance(
         data?.map(student => ({
@@ -352,6 +361,7 @@ export const TeacherDashboard = () => {
                   variant="secondary"
                   className="w-full justify-start"
                   size="lg"
+                  onClick={() => setAddStudentOpen(true)}
                 >
                   <UserPlus className="w-5 h-5 mr-3" />
                   नया छात्र जोड़ें / Add Student
@@ -361,6 +371,7 @@ export const TeacherDashboard = () => {
                   variant="outline"
                   className="w-full justify-start"
                   size="lg"
+                  onClick={() => setFaceScanOpen(true)}
                 >
                   <Camera className="w-5 h-5 mr-3" />
                   चेहरा स्कैन / Face Scan
@@ -394,6 +405,20 @@ export const TeacherDashboard = () => {
           </div>
         </div>
       </div>
+      
+      <FaceScanDialog
+        isOpen={faceScanOpen}
+        onClose={() => setFaceScanOpen(false)}
+        students={students}
+        onMarkAttendance={updateAttendance}
+        attendanceMarked={new Set(attendance.map(a => a.student_id))}
+      />
+      
+      <AddStudentDialog
+        isOpen={addStudentOpen}
+        onClose={() => setAddStudentOpen(false)}
+        onStudentAdded={fetchStudents}
+      />
     </div>
   );
 };

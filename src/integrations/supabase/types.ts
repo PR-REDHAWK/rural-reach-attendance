@@ -131,6 +131,8 @@ export type Database = {
         Row: {
           class: string
           created_at: string
+          face_descriptor: Json | null
+          face_enrolled_at: string | null
           id: string
           name: string
           parent_phone: string | null
@@ -143,6 +145,8 @@ export type Database = {
         Insert: {
           class: string
           created_at?: string
+          face_descriptor?: Json | null
+          face_enrolled_at?: string | null
           id?: string
           name: string
           parent_phone?: string | null
@@ -155,6 +159,8 @@ export type Database = {
         Update: {
           class?: string
           created_at?: string
+          face_descriptor?: Json | null
+          face_enrolled_at?: string | null
           id?: string
           name?: string
           parent_phone?: string | null
