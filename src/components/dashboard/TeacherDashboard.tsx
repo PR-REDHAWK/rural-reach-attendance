@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { FaceScanDialog } from '@/components/face/FaceScanDialog';
 import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
+import { BatchEnrollDialog } from '@/components/face/BatchEnrollDialog';
 import { 
   Users, 
   CheckSquare, 
@@ -17,7 +18,8 @@ import {
   Camera,
   BookOpen,
   TrendingUp,
-  LogOut
+  LogOut,
+  Users2
 } from 'lucide-react';
 
 interface Student {
@@ -46,6 +48,7 @@ export const TeacherDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [faceScanOpen, setFaceScanOpen] = useState(false);
   const [addStudentOpen, setAddStudentOpen] = useState(false);
+  const [batchEnrollOpen, setBatchEnrollOpen] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -376,6 +379,16 @@ export const TeacherDashboard = () => {
                   <Camera className="w-5 h-5 mr-3" />
                   चेहरा स्कैन / Face Scan
                 </HeroButton>
+                
+                <HeroButton
+                  variant="outline"
+                  className="w-full justify-start"
+                  size="lg"
+                  onClick={() => setBatchEnrollOpen(true)}
+                >
+                  <Users2 className="w-5 h-5 mr-3" />
+                  समूहिक नामांकन / Batch Enroll
+                </HeroButton>
               </CardContent>
             </Card>
 
@@ -418,6 +431,13 @@ export const TeacherDashboard = () => {
         isOpen={addStudentOpen}
         onClose={() => setAddStudentOpen(false)}
         onStudentAdded={fetchStudents}
+      />
+      
+      <BatchEnrollDialog
+        isOpen={batchEnrollOpen}
+        onClose={() => setBatchEnrollOpen(false)}
+        students={students}
+        onEnrollmentComplete={fetchStudents}
       />
     </div>
   );

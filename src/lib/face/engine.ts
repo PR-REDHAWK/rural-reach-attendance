@@ -98,7 +98,8 @@ export const euclideanDistance = (a: number[], b: number[]): number => {
 
 export const findBestMatch = (
   inputDescriptor: number[], 
-  enrolledFaces: { studentId: string; descriptor: number[] }[]
+  enrolledFaces: { studentId: string; descriptor: number[] }[],
+  threshold: number = MATCH_THRESHOLD
 ): FaceMatch | null => {
   if (!enrolledFaces.length) return null;
 
@@ -109,7 +110,7 @@ export const findBestMatch = (
     try {
       const distance = euclideanDistance(inputDescriptor, enrolled.descriptor);
       
-      if (distance < minDistance && distance < MATCH_THRESHOLD) {
+      if (distance < minDistance && distance < threshold) {
         minDistance = distance;
         bestMatch = {
           studentId: enrolled.studentId,
@@ -125,13 +126,16 @@ export const findBestMatch = (
   return bestMatch;
 };
 
-export const setupVideoStream = async (videoElement: HTMLVideoElement): Promise<MediaStream> => {
+export const setupVideoStream = async (
+  videoElement: HTMLVideoElement, 
+  facingMode: 'user' | 'environment' = 'user'
+): Promise<MediaStream> => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         width: { ideal: 640 },
         height: { ideal: 480 },
-        facingMode: 'user' // Front camera by default
+        facingMode
       }
     });
 

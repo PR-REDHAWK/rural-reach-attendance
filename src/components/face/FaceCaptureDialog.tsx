@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, X, Check, AlertCircle } from 'lucide-react';
+import { Camera, X, Check, AlertCircle, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -29,6 +29,7 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
   const [isCapturing, setIsCapturing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [faceDetected, setFaceDetected] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   useEffect(() => {
     if (isOpen && videoRef.current) {
@@ -45,7 +46,12 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
       setError(null);
       if (!videoRef.current) return;
       
-      const stream = await setupVideoStream(videoRef.current);
+      // Stop existing stream before starting new one
+      if (streamRef.current) {
+        stopVideoStream(streamRef.current);
+      }
+      
+      const stream = await setupVideoStream(videoRef.current, facingMode);
       streamRef.current = stream;
       setIsStreaming(true);
       
@@ -56,6 +62,17 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
       console.error('Camera setup error:', err);
     }
   };
+
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+  };
+
+  // Restart camera when facing mode changes
+  useEffect(() => {
+    if (isOpen && videoRef.current && isStreaming) {
+      startCamera();
+    }
+  }, [facingMode]);
 
   const startFaceDetection = () => {
     const detectFace = async () => {
@@ -147,16 +164,44 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
               playsInline
             />
             
+            {/* Camera flip button */}
+            <div className="absolute top-2 left-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={toggleCamera}
+                className="h-8 w-8 p-0"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+
             {/* Face detection overlay */}
             {isStreaming && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div 
-                  className={`w-48 h-48 border-2 rounded-full transition-colors ${
+                  className={`w-48 h-48 border-4 rounded-full transition-all duration-300 ${
                     faceDetected 
-                      ? 'border-green-500 bg-green-500/10' 
-                      : 'border-orange-500 bg-orange-500/10'
+                      ? 'border-green-500 bg-green-500/10 scale-105' 
+                      : 'border-orange-500 bg-orange-500/10 animate-pulse'
                   }`}
-                />
+                >
+                  {/* Face detection guide corners */}
+                  <div className="relative w-full h-full">
+                    <div className={`absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 ${
+                      faceDetected ? 'border-green-400' : 'border-orange-400'
+                    }`} />
+                    <div className={`absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 ${
+                      faceDetected ? 'border-green-400' : 'border-orange-400'
+                    }`} />
+                    <div className={`absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 ${
+                      faceDetected ? 'border-green-400' : 'border-orange-400'
+                    }`} />
+                    <div className={`absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 ${
+                      faceDetected ? 'border-green-400' : 'border-orange-400'
+                    }`} />
+                  </div>
+                </div>
               </div>
             )}
             

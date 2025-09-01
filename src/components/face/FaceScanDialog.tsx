@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Scan, X, User, CheckCircle, AlertCircle } from 'lucide-react';
+import { Scan, X, User, CheckCircle, AlertCircle, Settings, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { FaceSettingsDialog, FaceSettings } from './FaceSettingsDialog';
 import { 
   setupVideoStream, 
   stopVideoStream, 
@@ -27,6 +28,13 @@ interface FaceScanDialogProps {
   attendanceMarked: Set<string>;
 }
 
+// Haptic feedback utility
+const triggerHapticFeedback = () => {
+  if ('vibrate' in navigator) {
+    navigator.vibrate([100, 50, 100]); // Short vibration pattern
+  }
+};
+
 export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
   isOpen,
   onClose,
@@ -43,6 +51,14 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastMatch, setLastMatch] = useState<{ studentName: string; confidence: number } | null>(null);
   const [scanCount, setScanCount] = useState(0);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<FaceSettings>({
+    confidenceThreshold: 0.4,
+    autoMarkThreshold: 0.6,
+    hapticFeedback: true,
+    scanInterval: 1000
+  });
   
   const { toast } = useToast();
 
@@ -63,7 +79,12 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
       setError(null);
       if (!videoRef.current) return;
       
-      const stream = await setupVideoStream(videoRef.current);
+      // Stop existing stream before starting new one
+      if (streamRef.current) {
+        stopVideoStream(streamRef.current);
+      }
+      
+      const stream = await setupVideoStream(videoRef.current, facingMode);
       streamRef.current = stream;
       setIsStreaming(true);
       
@@ -75,6 +96,17 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
     }
   };
 
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+  };
+
+  // Restart camera when facing mode changes
+  useEffect(() => {
+    if (isOpen && videoRef.current && isStreaming) {
+      startCamera();
+    }
+  }, [facingMode]);
+
   const startScanning = () => {
     if (scanIntervalRef.current) return;
     
@@ -84,7 +116,7 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
     scanIntervalRef.current = setInterval(async () => {
       await performScan();
       setScanCount(prev => prev + 1);
-    }, 1000); // Scan every second
+    }, settings.scanInterval);
   };
 
   const stopScanning = () => {
@@ -107,9 +139,9 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
         descriptor: s.face_descriptor!
       }));
       
-      const match = findBestMatch(descriptor, enrolledFaces);
+      const match = findBestMatch(descriptor, enrolledFaces, settings.confidenceThreshold);
       
-      if (match && match.confidence > 0.4) { // 40% confidence threshold
+      if (match && match.confidence > settings.confidenceThreshold) {
         const student = students.find(s => s.id === match.studentId);
         if (student) {
           setLastMatch({
@@ -118,8 +150,13 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
           });
           
           // Auto-mark attendance if confidence is high and not already marked
-          if (match.confidence > 0.6 && !attendanceMarked.has(student.id)) {
+          if (match.confidence > settings.autoMarkThreshold && !attendanceMarked.has(student.id)) {
             onMarkAttendance(student.id, 'present');
+            // Trigger haptic feedback
+            if (settings.hapticFeedback) {
+              triggerHapticFeedback();
+            }
+            
             toast({
               title: "Attendance Marked",
               description: `${student.name} marked as present (${Math.round(match.confidence * 100)}% confidence)`,
@@ -172,6 +209,14 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
             <Scan className="h-5 w-5" />
             Face Scan Attendance
             <Badge variant="secondary">{enrolledStudents.length} enrolled</Badge>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowSettings(true)}
+              className="ml-auto"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
           </DialogTitle>
         </DialogHeader>
         
@@ -201,14 +246,42 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
               playsInline
             />
             
+            {/* Camera flip button */}
+            <div className="absolute top-2 left-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={toggleCamera}
+                className="h-8 w-8 p-0"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
+            
             {/* Scanning overlay */}
             {isStreaming && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className={`w-48 h-48 border-2 rounded-full transition-all duration-500 ${
+                <div className={`w-48 h-48 border-4 rounded-full transition-all duration-500 ${
                   isScanning 
-                    ? 'border-blue-500 bg-blue-500/10 animate-pulse' 
+                    ? 'border-blue-500 bg-blue-500/10 animate-pulse scale-105' 
                     : 'border-gray-500 bg-gray-500/10'
-                }`} />
+                }`}>
+                  {/* Scanning corners */}
+                  <div className="relative w-full h-full">
+                    <div className={`absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 transition-colors ${
+                      isScanning ? 'border-blue-400' : 'border-gray-400'
+                    }`} />
+                    <div className={`absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 transition-colors ${
+                      isScanning ? 'border-blue-400' : 'border-gray-400'
+                    }`} />
+                    <div className={`absolute bottom-2 left-2 w-6 h-6 border-l-2 border-b-2 transition-colors ${
+                      isScanning ? 'border-blue-400' : 'border-gray-400'
+                    }`} />
+                    <div className={`absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 transition-colors ${
+                      isScanning ? 'border-blue-400' : 'border-gray-400'
+                    }`} />
+                  </div>
+                </div>
               </div>
             )}
             
@@ -265,6 +338,13 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
           </div>
         </div>
       </DialogContent>
+      
+      <FaceSettingsDialog
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={settings}
+        onUpdateSettings={setSettings}
+      />
     </Dialog>
   );
 };
