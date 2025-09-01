@@ -131,6 +131,21 @@ export const setupVideoStream = async (
   facingMode: 'user' | 'environment' = 'user'
 ): Promise<MediaStream> => {
   try {
+    console.log('Setting up video stream...', { facingMode });
+    
+    // Check if mediaDevices is available
+    if (!navigator.mediaDevices) {
+      console.error('mediaDevices not available');
+      throw new Error('Camera not supported in this browser');
+    }
+
+    // Check if getUserMedia is available
+    if (!navigator.mediaDevices.getUserMedia) {
+      console.error('getUserMedia not available');
+      throw new Error('Camera access not supported in this browser');
+    }
+
+    console.log('Requesting camera access...');
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         width: { ideal: 640 },
@@ -139,20 +154,54 @@ export const setupVideoStream = async (
       }
     });
 
+    console.log('Camera access granted, setting up video element...');
     videoElement.srcObject = stream;
     videoElement.playsInline = true;
+    videoElement.muted = true; // Ensure muted for autoplay
     
     return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        console.error('Video loading timeout');
+        reject(new Error('Video loading timeout'));
+      }, 10000); // 10 second timeout
+
       videoElement.onloadedmetadata = () => {
+        console.log('Video metadata loaded, starting playback...');
+        clearTimeout(timeout);
         videoElement.play()
-          .then(() => resolve(stream))
-          .catch(reject);
+          .then(() => {
+            console.log('Video playback started successfully');
+            resolve(stream);
+          })
+          .catch((playError) => {
+            console.error('Video play error:', playError);
+            reject(new Error(`Video playback failed: ${playError.message}`));
+          });
       };
-      videoElement.onerror = reject;
+      
+      videoElement.onerror = (error) => {
+        console.error('Video element error:', error);
+        clearTimeout(timeout);
+        reject(new Error('Video element error'));
+      };
     });
   } catch (error) {
     console.error('Error setting up video stream:', error);
-    throw new Error('Unable to access camera');
+    
+    // Provide more specific error messages
+    if (error.name === 'NotAllowedError') {
+      throw new Error('Camera access denied. Please allow camera permissions and try again.');
+    } else if (error.name === 'NotFoundError') {
+      throw new Error('No camera found on this device.');
+    } else if (error.name === 'NotReadableError') {
+      throw new Error('Camera is being used by another application.');
+    } else if (error.name === 'OverconstrainedError') {
+      throw new Error('Camera constraints cannot be satisfied.');
+    } else if (error.name === 'SecurityError') {
+      throw new Error('Camera access blocked by security settings.');
+    } else {
+      throw new Error(`Camera setup failed: ${error.message || 'Unknown error'}`);
+    }
   }
 };
 

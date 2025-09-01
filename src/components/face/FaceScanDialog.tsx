@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { FaceSettingsDialog, FaceSettings } from './FaceSettingsDialog';
+import { checkCameraSupport, requestCameraPermission } from '@/lib/camera-utils';
 import { 
   setupVideoStream, 
   stopVideoStream, 
@@ -76,23 +77,45 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
 
   const startCamera = async () => {
     try {
+      console.log('Starting camera in FaceScanDialog...');
       setError(null);
-      if (!videoRef.current) return;
+      
+      // Check camera support first
+      const supportCheck = checkCameraSupport();
+      if (!supportCheck.supported) {
+        setError(supportCheck.error || 'Camera not supported');
+        return;
+      }
+
+      if (!videoRef.current) {
+        console.error('Video ref not available');
+        return;
+      }
+      
+      // Check permissions
+      const permissionCheck = await requestCameraPermission();
+      if (!permissionCheck.granted) {
+        setError(permissionCheck.error || 'Camera permission denied');
+        return;
+      }
       
       // Stop existing stream before starting new one
       if (streamRef.current) {
+        console.log('Stopping existing stream...');
         stopVideoStream(streamRef.current);
       }
       
+      console.log('Setting up new video stream...');
       const stream = await setupVideoStream(videoRef.current, facingMode);
       streamRef.current = stream;
       setIsStreaming(true);
+      console.log('Camera started successfully');
       
       // Start scanning automatically
       startScanning();
     } catch (err) {
-      setError('Unable to access camera. Please check permissions.');
-      console.error('Camera setup error:', err);
+      console.error('Camera setup error in FaceScanDialog:', err);
+      setError(err instanceof Error ? err.message : 'Unable to access camera. Please check permissions.');
     }
   };
 
@@ -244,6 +267,8 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
               autoPlay
               muted
               playsInline
+              controls={false}
+              preload="metadata"
             />
             
             {/* Camera flip button */}
