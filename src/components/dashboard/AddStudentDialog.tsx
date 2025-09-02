@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -185,6 +185,9 @@ export const AddStudentDialog: React.FC<AddStudentDialogProps> = ({
               <User className="h-5 w-5" />
               Add New Student
             </DialogTitle>
+            <DialogDescription>
+              Add a new student to your class with optional face recognition enrollment
+            </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">

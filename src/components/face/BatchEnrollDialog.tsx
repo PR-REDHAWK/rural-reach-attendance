@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Users, Camera, Check, X, ArrowRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -139,6 +139,9 @@ export const BatchEnrollDialog: React.FC<BatchEnrollDialogProps> = ({
                 {currentStudentIndex + 1} of {unenrolledStudents.length}
               </Badge>
             </DialogTitle>
+            <DialogDescription>
+              Enroll face data for multiple students at once
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6">
