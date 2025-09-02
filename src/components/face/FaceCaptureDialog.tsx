@@ -44,45 +44,59 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
 
   const startCamera = async () => {
     try {
-      console.log('Starting camera in FaceCaptureDialog...');
+      console.log('📸 Starting camera in FaceCaptureDialog...');
       setError(null);
+      setIsStreaming(false);
       
       // Check camera support first
       const supportCheck = checkCameraSupport();
       if (!supportCheck.supported) {
-        setError(supportCheck.error || 'Camera not supported');
+        const errorMsg = supportCheck.error || 'Camera not supported';
+        console.error('❌ Camera support check failed:', errorMsg);
+        setError(errorMsg);
         return;
       }
+      console.log('✅ Camera support confirmed');
 
       if (!videoRef.current) {
-        console.error('Video ref not available');
+        const errorMsg = 'Video element not available';
+        console.error('❌', errorMsg);
+        setError(errorMsg);
         return;
       }
+      console.log('✅ Video element available');
       
       // Check permissions
+      console.log('🔐 Checking camera permissions...');
       const permissionCheck = await requestCameraPermission();
       if (!permissionCheck.granted) {
-        setError(permissionCheck.error || 'Camera permission denied');
+        const errorMsg = permissionCheck.error || 'Camera permission denied';
+        console.error('❌ Permission check failed:', errorMsg);
+        setError(errorMsg);
         return;
       }
+      console.log('✅ Camera permissions granted');
       
       // Stop existing stream before starting new one
       if (streamRef.current) {
-        console.log('Stopping existing stream...');
+        console.log('🛑 Stopping existing stream...');
         stopVideoStream(streamRef.current);
+        streamRef.current = null;
       }
       
-      console.log('Setting up new video stream...');
+      console.log('📹 Setting up new video stream...');
       const stream = await setupVideoStream(videoRef.current, facingMode);
       streamRef.current = stream;
       setIsStreaming(true);
-      console.log('Camera started successfully');
+      console.log('🎊 Camera started successfully');
       
       // Start face detection loop
       startFaceDetection();
     } catch (err) {
-      console.error('Camera setup error in FaceCaptureDialog:', err);
-      setError(err instanceof Error ? err.message : 'Unable to access camera. Please check permissions.');
+      console.error('💥 Camera setup error in FaceCaptureDialog:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unable to access camera. Please check permissions and try again.';
+      setError(errorMessage);
+      setIsStreaming(false);
     }
   };
 

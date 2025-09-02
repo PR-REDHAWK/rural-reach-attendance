@@ -127,66 +127,118 @@ export const findBestMatch = (
 };
 
 export const setupVideoStream = async (
-  videoElement: HTMLVideoElement, 
+  videoElement: HTMLVideoElement,
   facingMode: 'user' | 'environment' = 'user'
 ): Promise<MediaStream> => {
+  console.log('🎥 Setting up video stream with facing mode:', facingMode);
+  
   try {
-    console.log('Setting up video stream...', { facingMode });
-    
+    // Stop any existing stream first
+    const currentStream = videoElement.srcObject as MediaStream;
+    if (currentStream) {
+      console.log('🛑 Stopping existing stream');
+      currentStream.getTracks().forEach(track => track.stop());
+      videoElement.srcObject = null;
+    }
+
     // Check if mediaDevices is available
     if (!navigator.mediaDevices) {
-      console.error('mediaDevices not available');
+      console.error('❌ mediaDevices not available');
       throw new Error('Camera not supported in this browser');
     }
 
     // Check if getUserMedia is available
     if (!navigator.mediaDevices.getUserMedia) {
-      console.error('getUserMedia not available');
+      console.error('❌ getUserMedia not available');
       throw new Error('Camera access not supported in this browser');
     }
 
-    console.log('Requesting camera access...');
-    const stream = await navigator.mediaDevices.getUserMedia({
+    // Enhanced constraints with better fallbacks
+    const constraints: MediaStreamConstraints = {
       video: {
-        width: { ideal: 640 },
-        height: { ideal: 480 },
-        facingMode
-      }
-    });
+        facingMode: { ideal: facingMode },
+        width: { ideal: 640, min: 320 },
+        height: { ideal: 480, min: 240 },
+        frameRate: { ideal: 30, min: 15 }
+      },
+      audio: false
+    };
 
-    console.log('Camera access granted, setting up video element...');
-    videoElement.srcObject = stream;
+    console.log('📋 Requesting media stream with constraints:', constraints);
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    console.log('✅ Media stream obtained:', stream.getTracks().map(t => ({
+      kind: t.kind,
+      label: t.label,
+      enabled: t.enabled,
+      readyState: t.readyState
+    })));
+
+    // Configure video element BEFORE setting srcObject
+    videoElement.autoplay = true;
+    videoElement.muted = true;
     videoElement.playsInline = true;
-    videoElement.muted = true; // Ensure muted for autoplay
+    videoElement.controls = false;
     
-    return new Promise((resolve, reject) => {
+    // Set the stream
+    videoElement.srcObject = stream;
+    console.log('🔗 Stream assigned to video element');
+    
+    // Wait for video to be ready with timeout
+    await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        console.error('Video loading timeout');
-        reject(new Error('Video loading timeout'));
-      }, 10000); // 10 second timeout
+        console.error('⏰ Video setup timeout after 10 seconds');
+        reject(new Error('Video setup timeout - camera may not be accessible'));
+      }, 10000);
 
-      videoElement.onloadedmetadata = () => {
-        console.log('Video metadata loaded, starting playback...');
+      const onLoadedMetadata = () => {
+        console.log('📐 Video metadata loaded - dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
         clearTimeout(timeout);
+        videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
+        videoElement.removeEventListener('error', onError);
+        
+        // Force play after metadata is loaded
         videoElement.play()
           .then(() => {
-            console.log('Video playback started successfully');
-            resolve(stream);
+            console.log('▶️ Video play started successfully');
+            resolve();
           })
           .catch((playError) => {
-            console.error('Video play error:', playError);
+            console.error('❌ Video play failed:', playError);
             reject(new Error(`Video playback failed: ${playError.message}`));
           });
       };
-      
-      videoElement.onerror = (error) => {
-        console.error('Video element error:', error);
+
+      const onError = (error: Event) => {
+        console.error('❌ Video error event:', error);
         clearTimeout(timeout);
-        reject(new Error('Video element error'));
+        videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
+        videoElement.removeEventListener('error', onError);
+        reject(new Error('Video failed to load - check camera permissions'));
       };
+
+      // If metadata is already loaded, resolve immediately
+      if (videoElement.readyState >= 1) {
+        console.log('📐 Video metadata already loaded');
+        clearTimeout(timeout);
+        onLoadedMetadata();
+        return;
+      }
+
+      videoElement.addEventListener('loadedmetadata', onLoadedMetadata);
+      videoElement.addEventListener('error', onError);
     });
+
+    console.log('🎊 Video stream setup complete successfully');
+    return stream;
   } catch (error) {
-    console.error('Error setting up video stream:', error);
+    console.error('💥 Video stream setup failed:', error);
+    
+    // Ensure video element is cleared on failure
+    if (videoElement.srcObject) {
+      const failedStream = videoElement.srcObject as MediaStream;
+      failedStream.getTracks().forEach(track => track.stop());
+      videoElement.srcObject = null;
+    }
     
     // Provide more specific error messages
     if (error.name === 'NotAllowedError') {
@@ -198,7 +250,7 @@ export const setupVideoStream = async (
     } else if (error.name === 'OverconstrainedError') {
       throw new Error('Camera constraints cannot be satisfied.');
     } else if (error.name === 'SecurityError') {
-      throw new Error('Camera access blocked by security settings.');
+      throw new Error('Camera access blocked by security settings. Try using HTTPS.');
     } else {
       throw new Error(`Camera setup failed: ${error.message || 'Unknown error'}`);
     }
