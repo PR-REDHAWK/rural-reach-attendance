@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, X, Check, AlertCircle, RotateCcw } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { checkCameraSupport, requestCameraPermission } from '@/lib/camera-utils';
@@ -182,6 +182,9 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
             Capture Face
             {studentName && <span className="text-muted-foreground">- {studentName}</span>}
           </DialogTitle>
+          <DialogDescription>
+            Position your face in the frame and capture for enrollment
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">

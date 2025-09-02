@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Scan, X, User, CheckCircle, AlertCircle, Settings, RotateCcw } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -255,6 +255,9 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
               <Settings className="h-4 w-4" />
             </Button>
           </DialogTitle>
+          <DialogDescription>
+            Scan student faces for automatic attendance marking
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
