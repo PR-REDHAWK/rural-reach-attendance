@@ -280,16 +280,12 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
           <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden">
             <video
               ref={videoRef}
-              className="w-full h-full object-cover bg-black"
+              className="w-full h-full object-cover"
               autoPlay
               muted
               playsInline
               controls={false}
-              preload="metadata"
-              style={{ 
-                minHeight: '240px',
-                backgroundColor: '#000000'
-              }}
+              style={{ minHeight: '240px' }}
             />
             
             {/* Debug overlay showing video state */}
