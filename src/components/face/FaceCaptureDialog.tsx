@@ -198,13 +198,26 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
           <div className="relative aspect-[4/3] bg-muted rounded-lg overflow-hidden">
             <video
               ref={videoRef}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover bg-black"
               autoPlay
               muted
               playsInline
               controls={false}
               preload="metadata"
+              style={{ 
+                minHeight: '240px',
+                backgroundColor: '#000000'
+              }}
             />
+            
+            {/* Debug overlay showing video state */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="absolute top-4 left-4 bg-black/75 text-white text-xs p-2 rounded">
+                Video: {videoRef.current?.videoWidth || 0}x{videoRef.current?.videoHeight || 0}<br/>
+                Ready: {videoRef.current?.readyState || 0}<br/>
+                Stream: {isStreaming ? 'Yes' : 'No'}
+              </div>
+            )}
             
             {/* Camera flip button */}
             <div className="absolute top-2 left-2">

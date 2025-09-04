@@ -14,28 +14,42 @@ export const loadModels = async (): Promise<void> => {
   if (modelsLoaded) return;
 
   try {
-    console.log('Loading face detection models...');
+    console.log('🤖 Loading face detection models...');
     
-    // Load models - use the CDN if local models fail
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-      faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-      faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-    ]).catch(async () => {
-      // Fallback to CDN if local models fail
-      console.log('Local models failed, loading from CDN...');
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('https://raw.githubusercontent.com/vladmandic/face-api/master/model'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('https://raw.githubusercontent.com/vladmandic/face-api/master/model'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('https://raw.githubusercontent.com/vladmandic/face-api/master/model'),
-      ]);
-    });
+    // Test different model sources with better error handling
+    const modelSources = [
+      '/models',
+      'https://raw.githubusercontent.com/vladmandic/face-api/master/model',
+      'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model'
+    ];
 
-    modelsLoaded = true;
-    console.log('Face detection models loaded successfully');
+    let lastError: Error | null = null;
+    
+    for (const source of modelSources) {
+      try {
+        console.log(`📂 Trying to load models from: ${source}`);
+        
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(source),
+          faceapi.nets.faceLandmark68Net.loadFromUri(source),
+          faceapi.nets.faceRecognitionNet.loadFromUri(source),
+        ]);
+        
+        console.log(`✅ Models loaded successfully from: ${source}`);
+        modelsLoaded = true;
+        return;
+      } catch (error) {
+        console.warn(`❌ Failed to load from ${source}:`, error);
+        lastError = error as Error;
+        continue;
+      }
+    }
+    
+    throw lastError || new Error('All model sources failed');
   } catch (error) {
-    console.error('Failed to load face detection models:', error);
-    throw new Error('Unable to load face detection models');
+    console.error('💥 Failed to load face detection models from all sources:', error);
+    modelsLoaded = false;
+    throw new Error(`Unable to load face detection models: ${error.message}`);
   }
 };
 
@@ -153,16 +167,20 @@ export const setupVideoStream = async (
       throw new Error('Camera access not supported in this browser');
     }
 
-    // Enhanced constraints with better fallbacks
+    // Enhanced constraints with better fallbacks and debugging
     const constraints: MediaStreamConstraints = {
       video: {
         facingMode: { ideal: facingMode },
-        width: { ideal: 640, min: 320 },
-        height: { ideal: 480, min: 240 },
-        frameRate: { ideal: 30, min: 15 }
+        width: { ideal: 640, min: 320, max: 1280 },
+        height: { ideal: 480, min: 240, max: 720 },
+        frameRate: { ideal: 30, min: 10, max: 60 }
       },
       audio: false
     };
+
+    console.log('📱 Available cameras:', await navigator.mediaDevices.enumerateDevices().then(devices => 
+      devices.filter(d => d.kind === 'videoinput').map(d => ({ label: d.label, deviceId: d.deviceId }))
+    ));
 
     console.log('📋 Requesting media stream with constraints:', constraints);
     const stream = await navigator.mediaDevices.getUserMedia(constraints);

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FaceScanDialog } from '@/components/face/FaceScanDialog';
 import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { BatchEnrollDialog } from '@/components/face/BatchEnrollDialog';
+import { CameraTestDialog } from '@/components/face/CameraTestDialog';
 import { 
   Users, 
   CheckSquare, 
@@ -19,7 +20,8 @@ import {
   BookOpen,
   TrendingUp,
   LogOut,
-  Users2
+  Users2,
+  Settings
 } from 'lucide-react';
 
 interface Student {
@@ -49,6 +51,7 @@ export const TeacherDashboard = () => {
   const [faceScanOpen, setFaceScanOpen] = useState(false);
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [batchEnrollOpen, setBatchEnrollOpen] = useState(false);
+  const [cameraTestOpen, setCameraTestOpen] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -389,6 +392,16 @@ export const TeacherDashboard = () => {
                   <Users2 className="w-5 h-5 mr-3" />
                   समूहिक नामांकन / Batch Enroll
                 </HeroButton>
+                
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  size="sm"
+                  onClick={() => setCameraTestOpen(true)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Test Camera
+                </Button>
               </CardContent>
             </Card>
 
@@ -438,6 +451,11 @@ export const TeacherDashboard = () => {
         onClose={() => setBatchEnrollOpen(false)}
         students={students}
         onEnrollmentComplete={fetchStudents}
+      />
+      
+      <CameraTestDialog
+        isOpen={cameraTestOpen}
+        onClose={() => setCameraTestOpen(false)}
       />
     </div>
   );
