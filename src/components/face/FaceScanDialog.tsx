@@ -81,52 +81,27 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
       setError(null);
       setIsStreaming(false);
       
-      // Check camera support first
-      const supportCheck = checkCameraSupport();
-      if (!supportCheck.supported) {
-        const errorMsg = supportCheck.error || 'Camera not supported';
-        console.error('❌ Camera support check failed:', errorMsg);
-        setError(errorMsg);
-        return;
-      }
-      console.log('✅ Camera support confirmed');
-
       if (!videoRef.current) {
-        const errorMsg = 'Video element not available';
-        console.error('❌', errorMsg);
-        setError(errorMsg);
+        setError('Video element not available');
         return;
       }
-      console.log('✅ Video element available');
-      
-      // Check permissions
-      console.log('🔐 Checking camera permissions...');
-      const permissionCheck = await requestCameraPermission();
-      if (!permissionCheck.granted) {
-        const errorMsg = permissionCheck.error || 'Camera permission denied';
-        console.error('❌ Permission check failed:', errorMsg);
-        setError(errorMsg);
-        return;
-      }
-      console.log('✅ Camera permissions granted');
       
       // Stop existing stream before starting new one
       if (streamRef.current) {
-        console.log('🛑 Stopping existing stream...');
         stopVideoStream(streamRef.current);
         streamRef.current = null;
       }
       
-      console.log('🎥 Setting up new video stream...');
+      console.log('🎥 Setting up video stream...');
       const stream = await setupVideoStream(videoRef.current, facingMode);
       streamRef.current = stream;
       setIsStreaming(true);
-      console.log('🎊 Camera started successfully');
+      console.log('✅ Camera started successfully');
       
       // Start scanning automatically
       startScanning();
     } catch (err) {
-      console.error('💥 Camera setup error in FaceScanDialog:', err);
+      console.error('❌ Camera setup error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unable to access camera. Please check permissions and try again.';
       setError(errorMessage);
       setIsStreaming(false);
