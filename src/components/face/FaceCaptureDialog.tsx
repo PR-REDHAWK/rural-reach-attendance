@@ -34,8 +34,11 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   useEffect(() => {
-    if (isOpen && videoRef.current) {
-      startCamera();
+    if (isOpen) {
+      // Add a small delay to ensure video element is rendered
+      setTimeout(() => {
+        startCamera();
+      }, 100);
     }
     
     return () => {

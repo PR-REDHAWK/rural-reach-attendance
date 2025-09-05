@@ -67,8 +67,11 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
   const enrolledStudents = students.filter(s => s.face_descriptor && s.face_descriptor.length > 0);
 
   useEffect(() => {
-    if (isOpen && videoRef.current) {
-      startCamera();
+    if (isOpen) {
+      // Add a small delay to ensure video element is rendered
+      setTimeout(() => {
+        startCamera();
+      }, 100);
     }
     
     return () => {
