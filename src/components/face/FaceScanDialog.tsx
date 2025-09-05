@@ -11,7 +11,8 @@ import {
   setupVideoStream, 
   stopVideoStream, 
   getDescriptorFromVideoFrame,
-  findBestMatch 
+  findBestMatch,
+  loadModels
 } from '@/lib/face/engine';
 
 interface Student {
@@ -97,6 +98,9 @@ export const FaceScanDialog: React.FC<FaceScanDialogProps> = ({
       streamRef.current = stream;
       setIsStreaming(true);
       console.log('✅ Camera started successfully');
+      
+      // Load models before starting scanning
+      await loadModels();
       
       // Start scanning automatically
       startScanning();

@@ -8,7 +8,8 @@ import {
   setupVideoStream, 
   stopVideoStream, 
   getDescriptorFromVideoFrame,
-  captureFrameAsBlob 
+  captureFrameAsBlob,
+  loadModels
 } from '@/lib/face/engine';
 
 interface FaceCaptureDialogProps {
@@ -64,6 +65,9 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
       streamRef.current = stream;
       setIsStreaming(true);
       console.log('✅ Camera started successfully');
+      
+      // Load models before starting face detection
+      await loadModels();
       
       // Start face detection loop
       startFaceDetection();
