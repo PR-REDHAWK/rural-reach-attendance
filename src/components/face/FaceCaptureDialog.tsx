@@ -54,6 +54,20 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
         return;
       }
       
+      // Check browser support first
+      const supportCheck = checkCameraSupport();
+      if (!supportCheck.supported) {
+        setError(supportCheck.error || 'Camera not supported');
+        return;
+      }
+      
+      // Request camera permission
+      const permissionCheck = await requestCameraPermission();
+      if (!permissionCheck.granted) {
+        setError(permissionCheck.error || 'Camera permission denied');
+        return;
+      }
+      
       // Stop existing stream before starting new one
       if (streamRef.current) {
         stopVideoStream(streamRef.current);
