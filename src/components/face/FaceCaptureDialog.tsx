@@ -87,11 +87,10 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
       console.log('🤖 Loading models for face detection...');
       await loadModels();
       console.log('✅ Models loaded, starting face detection...');
+      console.log('Current state - isStreaming:', isStreaming, 'videoRef:', !!videoRef.current);
       
-      // Wait a bit for video to be fully ready, then start face detection
-      setTimeout(() => {
-        startFaceDetection();
-      }, 1000);
+      // Start face detection immediately since we know everything is ready
+      startFaceDetection();
     } catch (err) {
       console.error('❌ Camera setup error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unable to access camera. Please check permissions and try again.';
@@ -113,9 +112,17 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
 
   const startFaceDetection = () => {
     console.log('🔍 Starting face detection loop...');
+    console.log('Video ref available:', !!videoRef.current);
+    console.log('Is streaming:', isStreaming);
+    
     const detectFace = async () => {
-      if (!videoRef.current || !isStreaming) {
-        console.log('❌ Face detection stopped - no video or stream');
+      if (!videoRef.current) {
+        console.log('❌ Face detection stopped - no video element');
+        return;
+      }
+      
+      if (!isStreaming) {
+        console.log('❌ Face detection stopped - not streaming');
         return;
       }
       
@@ -129,9 +136,8 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
         setFaceDetected(false);
       }
       
-      if (isStreaming) {
-        setTimeout(detectFace, 500); // Check every 500ms
-      }
+      // Continue detection loop
+      setTimeout(detectFace, 500);
     };
     
     detectFace();
