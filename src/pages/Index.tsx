@@ -3,6 +3,7 @@ import { AuthForm } from '@/components/auth/AuthForm';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { HeroButton } from '@/components/ui/hero-button';
 import { School, Users, BarChart3, Camera, Smartphone, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import heroImage from '@/assets/hero-image.jpg';
 
 const Index = () => {
@@ -61,10 +62,12 @@ const Index = () => {
                 शिक्षक लॉगिन / Teacher Login
               </HeroButton>
               
-              <HeroButton variant="outline" size="xl" className="border-white text-white hover:bg-white hover:text-primary">
-                <BarChart3 className="w-6 h-6 mr-3" />
-                प्रशासक पैनल / Admin Panel
-              </HeroButton>
+              <Link to="/admin/login">
+                <HeroButton variant="outline" size="xl" className="border-white text-white hover:bg-white hover:text-primary">
+                  <BarChart3 className="w-6 h-6 mr-3" />
+                  प्रशासक पैनल / Admin Panel
+                </HeroButton>
+              </Link>
             </div>
           </div>
         </section>
