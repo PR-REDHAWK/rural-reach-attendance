@@ -84,10 +84,14 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
       console.log('✅ Camera started successfully');
       
       // Load models before starting face detection
+      console.log('🤖 Loading models for face detection...');
       await loadModels();
+      console.log('✅ Models loaded, starting face detection...');
       
-      // Start face detection loop
-      startFaceDetection();
+      // Wait a bit for video to be fully ready, then start face detection
+      setTimeout(() => {
+        startFaceDetection();
+      }, 1000);
     } catch (err) {
       console.error('❌ Camera setup error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unable to access camera. Please check permissions and try again.';
@@ -108,14 +112,21 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
   }, [facingMode]);
 
   const startFaceDetection = () => {
+    console.log('🔍 Starting face detection loop...');
     const detectFace = async () => {
-      if (!videoRef.current || !isStreaming) return;
+      if (!videoRef.current || !isStreaming) {
+        console.log('❌ Face detection stopped - no video or stream');
+        return;
+      }
       
       try {
+        console.log('🔍 Detecting face...');
         const descriptor = await getDescriptorFromVideoFrame(videoRef.current);
+        console.log('👤 Face descriptor result:', descriptor ? 'Found' : 'Not found');
         setFaceDetected(!!descriptor);
       } catch (err) {
-        console.error('Face detection error:', err);
+        console.error('❌ Face detection error:', err);
+        setFaceDetected(false);
       }
       
       if (isStreaming) {
