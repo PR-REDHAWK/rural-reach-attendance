@@ -87,10 +87,12 @@ export const FaceCaptureDialog: React.FC<FaceCaptureDialogProps> = ({
       console.log('🤖 Loading models for face detection...');
       await loadModels();
       console.log('✅ Models loaded, starting face detection...');
-      console.log('Current state - isStreaming:', isStreaming, 'videoRef:', !!videoRef.current);
       
-      // Start face detection immediately since we know everything is ready
-      startFaceDetection();
+      // Use setTimeout to ensure React state has updated
+      setTimeout(() => {
+        console.log('Current state - isStreaming:', true, 'videoRef:', !!videoRef.current);
+        startFaceDetection();
+      }, 100);
     } catch (err) {
       console.error('❌ Camera setup error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unable to access camera. Please check permissions and try again.';
