@@ -141,6 +141,25 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       
       if (error) throw error;
       
+      // Send custom confirmation email
+      if (data.user && !data.user.email_confirmed_at) {
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-admin-confirmation', {
+            body: {
+              email: email,
+              name: name,
+              confirmationUrl: `${window.location.origin}/admin/dashboard`
+            }
+          });
+          
+          if (emailError) {
+            console.error('Error sending confirmation email:', emailError);
+          }
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+        }
+      }
+      
       return { error: null };
     } catch (error) {
       return { error };
