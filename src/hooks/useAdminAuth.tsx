@@ -17,6 +17,7 @@ interface AdminAuthContextType {
   profile: AdminProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
 }
@@ -122,6 +123,30 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     }
   };
 
+  const signUp = async (email: string, password: string, name: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/admin/dashboard`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name,
+            role: 'admin'
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -140,6 +165,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       profile,
       loading,
       signIn,
+      signUp,
       signOut,
       isAdmin
     }}>
