@@ -104,21 +104,34 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       
       // Check if user is admin
       if (data.user) {
+        console.log('User logged in:', data.user.id);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('user_id', data.user.id)
           .eq('role', 'admin')
-          .single();
+          .maybeSingle();
           
-        if (profileError || !profileData) {
+        console.log('Profile query result:', { profileData, profileError });
+        
+        if (profileError) {
+          console.error('Profile query error:', profileError);
+          await supabase.auth.signOut();
+          throw new Error('Database error occurred.');
+        }
+        
+        if (!profileData) {
+          console.log('No admin profile found for user');
           await supabase.auth.signOut();
           throw new Error('Access denied. Admin privileges required.');
         }
+        
+        console.log('Admin login successful:', profileData);
       }
       
       return { error: null };
     } catch (error) {
+      console.error('SignIn error:', error);
       return { error };
     }
   };
